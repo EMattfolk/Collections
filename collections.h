@@ -30,6 +30,40 @@ template <typename T>
 class LinkedList;
 
 template <typename T>
+class Iterable {
+public:
+    /*
+     * Return a Iterator to to the object at the beginning.
+     */
+    virtual Iterator<T> iter() = 0;
+
+    /*
+     * Return a Iterator to to the object at the end.
+     */
+    virtual Iterator<T> iter_end() = 0;
+
+    /*
+     * Get next data from current data.
+     */
+    virtual T* next(T* data) = 0;
+
+    /*
+     * Get previous data from current data.
+     */
+    virtual T* prev(T* data) = 0;
+
+    /*
+     * Determine if the data pointed to is valid.
+     */
+    virtual bool valid(T* data) = 0;
+
+    /*
+     * Get value associated with data
+     */
+    virtual T value(T* it) = 0;
+};
+
+template <typename T>
 class Iterator : Iterable<T> {
 public:
     Iterator(Iterable<T>* iterable, T* data);
@@ -60,20 +94,20 @@ public:
         return iterable->iter_end();
     }
 
-    Iterator<T> next(const Iterator<T>* it) {
-        return iterable->next(it);
+    T* next(T* data) {
+        return iterable->next(data);
     }
 
-    Iterator<T> prev(const Iterator<T>* it) {
-        return iterable->prev(it);
+    T* prev(T* data) {
+        return iterable->prev(data);
     }
 
-    bool valid(const Iterator<T>* it) {
-        return iterable->valid(it);
+    bool valid(T* data) {
+        return iterable->valid(data);
     }
 
-    T value(Iterator<T>* it) {
-        return iterable->value(it);
+    T value(T* data) {
+        return iterable->value(data);
     }
 };
 
@@ -88,29 +122,24 @@ public:
     // Convenience functions
 
     void next() {
-        auto temp = Iterator<F>(iterable, data);
-        data = iterable->next(&temp).data;
+        data = iterable->next(data);
     }
 
     void prev() {
-        auto temp = Iterator<F>(iterable, data);
-        iterable->prev(&temp);
+        data = iterable->prev(data);
     }
 
     bool valid() {
-        auto temp = Iterator<F>(iterable, data);
-        return iterable->valid(&temp);
+        return iterable->valid(data);
     }
 
     T value() {
-        auto temp_it = Iterator<F>(iterable, data);
-        T temp_value = map_function(iterable->value(&temp_it));
-        return temp_value;
+        return map_function(iterable->value(data));
     }
 
     template <typename N>
     MapIterator<T, N> map(N (*map_function)(T)) {
-        return MapIterator<T, N>((Iterable<T>*)iterable, (T*)data, map_function);
+        return MapIterator<T, N>(this, (T*)data, map_function);
     }
 
     Iterable<F>* iterable;
@@ -122,59 +151,25 @@ public:
     }
 
     Iterator<T> iter_end() {
-        // TODO: fix?
+        // TODO: fix? But not really defined?
         return iter();
     }
 
-    Iterator<T> next(const Iterator<T>* it) {
-        auto itt = iterable->next((Iterator<F>*) it);
-        return Iterator<T>(this, (T*)itt.data);
+    T* next(T* data) {
+        return (T*)iterable->next((F*) data);
     }
 
-    Iterator<T> prev(const Iterator<T>* it) {
-        return iter().prev(it);
+    T* prev(T* data) {
+        return (T*)iterable->prev((F*) data);
     }
 
-    bool valid(const Iterator<T>* it) {
-        return iter().valid(it);
+    bool valid(T* data) {
+        return iterable->valid((F*) data);
     }
 
-    T value(Iterator<T>* it) {
-        T temp = map_function(iterable->value((Iterator<F>*)it)); 
-        std::cout << temp << std::endl;
-        return temp;
+    T value(T* data) {
+        return map_function(iterable->value((F*)data));
     }
-};
-
-template <typename T>
-class Iterable {
-public:
-    /*
-     * Return a Iterator to to the object at the beginning.
-     */
-    virtual Iterator<T> iter() = 0;
-
-    /*
-     * Return a Iterator to to the object at the end.
-     */
-    virtual Iterator<T> iter_end() = 0;
-
-    /*
-     * Get next iterator from current.
-     */
-    virtual Iterator<T> next(const Iterator<T>* it) = 0;
-
-    /*
-     * Get previous iterator from current.
-     */
-    virtual Iterator<T> prev(const Iterator<T>* it) = 0;
-
-    /*
-     * Determine if the iterator has a value;
-     */
-    virtual bool valid(const Iterator<T>* it) = 0;
-
-    virtual T value(Iterator<T>* it) = 0;
 };
 
 template <typename T>
@@ -196,14 +191,14 @@ public:
 
     Iterator<T> iter_end();
 
-    Iterator<T> next(const Iterator<T>* iterator);
+    T* next(T* data);
 
-    Iterator<T> prev(const Iterator<T>* iterator);
+    T* prev(T* data);
 
-    bool valid(const Iterator<T>* it);
+    bool valid(T* data);
 
-    T value(Iterator<T>* it) {
-        return *it->data;
+    T value(T* data) {
+        return *data;
     }
 
 private:
@@ -238,14 +233,14 @@ public:
 
     Iterator<T> iter_end();
 
-    Iterator<T> next(const Iterator<T>* iterator);
+    T* next(T* data);
 
-    Iterator<T> prev(const Iterator<T>* iterator);
+    T* prev(T* data);
 
-    bool valid(const Iterator<T>* iterator);
+    bool valid(T* data);
 
-    T value(Iterator<T>* it) {
-        return *it->data;
+    T value(T* data) {
+        return *data;
     }
 
     Node<T>* head;
@@ -268,26 +263,22 @@ Iterator<T>::Iterator(Iterable<T>* iterable, T* data) :
 
 template <typename T>
 void Iterator<T>::next() {
-    Iterator<T> temp = iterable->next(this);
-    iterable = temp.iterable;
-    data = temp.data;
+    data = iterable->next(data);
 };
 
 template <typename T>
 void Iterator<T>::prev() {
-    Iterator<T> temp = iterable->prev(this);
-    iterable = temp.iterable;
-    data = temp.data;
+    data = iterable->prev(data);
 }
 
 template <typename T>
 bool Iterator<T>::valid() {
-    return iterable->valid(this);
+    return iterable->valid(data);
 }
 
 template <typename T>
 T Iterator<T>::value() {
-    return iterable->value(this);
+    return iterable->value(data);
 }
 
 template <typename T>
@@ -344,18 +335,18 @@ Iterator<T> ArrayList<T>::iter_end() {
 }
 
 template <typename T>
-Iterator<T> ArrayList<T>::next(const Iterator<T>* iterator) {
-    return Iterator<T>(this, iterator->data + 1);
+T* ArrayList<T>::next(T* data) {
+    return data + 1;
 }
 
 template <typename T>
-Iterator<T> ArrayList<T>::prev(const Iterator<T>* iterator) {
-    return Iterator<T>(this, iterator->data - 1);
+T* ArrayList<T>::prev(T* data) {
+    return data - 1;
 }
 
 template <typename T>
-bool ArrayList<T>::valid(const Iterator<T>* it) {
-    return data <= it->data && it->data < data + size;
+bool ArrayList<T>::valid(T* data) {
+    return this->data <= data && data < this->data + size;
 }
 
 template <typename T>
@@ -461,18 +452,18 @@ Iterator<T> LinkedList<T>::iter_end() {
 }
 
 template <typename T>
-Iterator<T> LinkedList<T>::next(const Iterator<T>* iterator) {
-    return Iterator<T>(this, (T*)((Node<T>*)iterator->data)->next);
+T* LinkedList<T>::next(T* data) {
+    return (T*)((Node<T>*)data)->next;
 }
 
 template <typename T>
-Iterator<T> LinkedList<T>::prev(const Iterator<T>* iterator) {
-    return Iterator<T>(this, (T*)((Node<T>*)iterator->data)->prev);
+T* LinkedList<T>::prev(T* data) {
+    return (T*)((Node<T>*)data)->prev;
 }
 
 template <typename T>
-bool LinkedList<T>::valid(const Iterator<T>* iterator) {
-    return iterator->data != nullptr;
+bool LinkedList<T>::valid(T* data) {
+    return data != nullptr;
 }
 
 #endif
