@@ -5,27 +5,40 @@
 // size_t
 #include <cstring>
 
-// Interface for implementing iterators on collecitons
+// Interface for implementing Iterators on collections.
 template <typename T>
 class Iterable;
 
-// Iterator used to iterate over a collection
+// AbstractIterator
+// Implements Iterable
+//
+// Used to create different types of Iterators.
+template <typename T>
+class AbstractIterator;
+
+// Iterator
+// Implements AbstractIterator
+//
+// Used to iterate over a collection. Values are retrieved lazily.
 template <typename T>
 class Iterator;
 
-// Iterator adapter for mapping functions on iterators
+// Iterator adapter for mapping functions on iterators.
+// Implements AbstractIterator
 template <typename F, typename T>
 class MapIterator;
 
-// Generic arraylist
+// ArrayList
+// Implements Iterable
 template <typename T>
 class ArrayList;
 
-// Simple node used in linked lists
+// Simple node used in linked lists.
 template <typename T>
 struct Node;
 
-// Amortized linked list (might remove amortized part)
+// LinkedList
+// Implements Iterable
 template <typename T>
 class LinkedList;
 
@@ -64,27 +77,78 @@ public:
 };
 
 template <typename T>
-class Iterator : Iterable<T> {
+class AbstractIterator : public Iterable<T> {
 public:
-    Iterator(Iterable<T>* iterable, T* data);
+    /*
+     * Construct a AbstractIterator from a iterable and a pointer to its data.
+     */
+    AbstractIterator(Iterable<T>* iterable, T* data);
 
-    // Convenience functions
+    /*
+     * Move this iterator to the next value.
+     * Default behaviour is to delegate task to layer below iterator.
+     */
+    virtual void next() { data = iterable->next(data); }
 
-    void next();
+    /*
+     * Move this iterator to the previous value.
+     * Default behaviour is to delegate task to layer below iterator.
+     */
+    virtual void prev() { data = iterable->next(data); }
 
-    void prev();
+    /*
+     * Determine if the iterator has a value.
+     * Default behaviour is to delegate task to layer below iterator.
+     */
+    virtual bool valid() { return iterable->valid(data); }
 
-    bool valid();
+    /*
+     * Get the value contained in the iterator.
+     * Default behaviour is to delegate task to layer below iterator.
+     * TODO: consider * and -> operators
+     */
+    virtual T value() { return iterable->value(data); }
 
-    T value();
-
+    /*
+     * Return a iterator that maps map_function to every value in the iterator.
+     */
     template <typename N>
     MapIterator<T, N> map(N (*map_function)(T)) {
         return MapIterator<T, N>(iterable, data, map_function);
     }
 
+    /*
+     * The Iterable on the layer below this one.
+     * Since Iterators can be stacked they need a way to interface with
+     * its lower levels. This field links to the layer below
+     * in a linked list fashion.
+     */
     Iterable<T>* iterable;
+
+    /*
+     * The current position of the Iterable.
+     * A pointer is used because some collections do not store
+     * data in sequential order, such as linked lists.
+     */
     T* data;
+};
+
+template <typename T>
+class Iterator : AbstractIterator<T> {
+public:
+    // Default constructor
+    using AbstractIterator<T>::AbstractIterator;
+
+    // Default data fields
+    using AbstractIterator<T>::iterable;
+    using AbstractIterator<T>::data;
+
+    // Default operators
+    using AbstractIterator<T>::map;
+    using AbstractIterator<T>::next;
+    using AbstractIterator<T>::prev;
+    using AbstractIterator<T>::valid;
+    using AbstractIterator<T>::value;
 
     Iterator<T> iter() {
         return iterable->iter();
@@ -109,31 +173,31 @@ public:
     T value(T* data) {
         return iterable->value(data);
     }
+
 };
 
 template <typename F, typename T>
-class MapIterator : public Iterable<T> {
+class MapIterator : public AbstractIterator<T> {
 public:
     MapIterator(Iterable<F>* iterable, F* data, T (*map_function)(F)) :
-    iterable(iterable),
-    data(data),
-    map_function(map_function) {}
+        AbstractIterator<T>(nullptr, nullptr),
+        iterable(iterable),
+        data(data),
+        map_function(map_function) {}
 
-    // Convenience functions
-
-    void next() {
+    void next() override {
         data = iterable->next(data);
     }
 
-    void prev() {
+    void prev() override {
         data = iterable->prev(data);
     }
 
-    bool valid() {
+    bool valid() override {
         return iterable->valid(data);
     }
 
-    T value() {
+    T value() override {
         return map_function(iterable->value(data));
     }
 
@@ -142,16 +206,11 @@ public:
         return MapIterator<T, N>(this, (T*)data, map_function);
     }
 
-    Iterable<F>* iterable;
-    F* data;
-    T (*map_function)(F);
-
     Iterator<T> iter() {
         return Iterator<T>(this, (T*)data);
     }
 
     Iterator<T> iter_end() {
-        // TODO: fix? But not really defined?
         return iter();
     }
 
@@ -170,6 +229,21 @@ public:
     T value(T* data) {
         return map_function(iterable->value((F*)data));
     }
+
+    /*
+     * Iterable of old type
+     */
+    Iterable<F>* iterable;
+
+    /*
+     * Data of old type
+     */
+    F* data;
+
+    /*
+     * Function used to map elements of old Iterator
+     */
+    T (*map_function)(F);
 };
 
 template <typename T>
@@ -257,29 +331,9 @@ private:
 //
 
 template <typename T>
-Iterator<T>::Iterator(Iterable<T>* iterable, T* data) :
+AbstractIterator<T>::AbstractIterator(Iterable<T>* iterable, T* data) :
     iterable(iterable),
     data(data) {}
-
-template <typename T>
-void Iterator<T>::next() {
-    data = iterable->next(data);
-};
-
-template <typename T>
-void Iterator<T>::prev() {
-    data = iterable->prev(data);
-}
-
-template <typename T>
-bool Iterator<T>::valid() {
-    return iterable->valid(data);
-}
-
-template <typename T>
-T Iterator<T>::value() {
-    return iterable->value(data);
-}
 
 template <typename T>
 ArrayList<T>::ArrayList() :
