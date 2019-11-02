@@ -295,9 +295,7 @@ public:
 
     void append(T value);
 
-    void remove(Iterator<T>& iterator);
-
-    void reserve(size_t new_capacity);
+    void remove(Iterator<T> iterator);
 
     size_t len();
 
@@ -320,10 +318,7 @@ public:
     Node<T>* head;
     Node<T>* tail;
 private:
-    Node<T>* amortized;
-    Node<T>* buffer;
     size_t size;
-    size_t max_size;
 };
 
 //
@@ -407,18 +402,11 @@ template <typename T>
 LinkedList<T>::LinkedList() :
     head(nullptr),
     tail(nullptr),
-    amortized(nullptr),
-    buffer(nullptr),
-    size(0),
-    max_size(0) {
-    reserve(1);
-}
+    size(0) {}
 
 template <typename T>
 void LinkedList<T>::append(T value) {
-    if (size == max_size) reserve(max_size * 2);
-    Node<T>* new_node = amortized;
-    amortized = amortized->next;
+    Node<T>* new_node = new Node<T>();
     *new_node = { value, nullptr, nullptr };
     if (size == 0) {
         head = new_node;
@@ -432,7 +420,7 @@ void LinkedList<T>::append(T value) {
 }
 
 template <typename T>
-void LinkedList<T>::remove(Iterator<T>& iterator) {
+void LinkedList<T>::remove(Iterator<T> iterator) {
     Node<T>* node = (Node<T>*)iterator.data;
     iterator.next();
     if (node->next == nullptr) {
@@ -445,44 +433,8 @@ void LinkedList<T>::remove(Iterator<T>& iterator) {
     } else {
         node->prev->next = node->next;
     }
-    node->next = amortized;
-    amortized = node;
+    delete node;
     size--;
-}
-
-template <typename T>
-void LinkedList<T>::reserve(size_t new_capacity) {
-    if (new_capacity <= max_size) return;
-    max_size = new_capacity;
-    Node<T>* new_buffer = new Node<T>[max_size];
-
-    // Copy current list to new buffer
-    Iterator<T> it = iter();
-    size_t i = 0;
-    while (it.valid()) {
-        new_buffer[i].value = it.value();
-        if (i > 0) {
-            new_buffer[i].prev = new_buffer + i - 1;
-        }
-        if (i < size - 1) {
-            new_buffer[i].next = new_buffer + i + 1;
-        }
-        it.next();
-        i++;
-    }
-
-    // Create amortized list
-    for (size_t i = size; i < max_size; i++) {
-        new_buffer[i].next = amortized;
-        amortized = new_buffer + i;
-    }
-
-    delete[] buffer;
-    buffer = new_buffer;
-    if (size) {
-        head = buffer;
-        tail = buffer + size - 1;
-    }
 }
 
 template <typename T>
@@ -492,7 +444,7 @@ size_t LinkedList<T>::len() {
 
 template <typename T>
 size_t LinkedList<T>::capacity() {
-    return max_size;
+    return size;
 }
 
 template <typename T>

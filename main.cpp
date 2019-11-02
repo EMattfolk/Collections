@@ -12,6 +12,8 @@ int main() {
     list.append(1);
     //list.append("Yeet");
 
+    list.remove(list.iter());
+
     int (*to_int)(float) = [](float a) { return (int) a; };
     int (*sq)(int) = [](int a) { return a * a; };
 
