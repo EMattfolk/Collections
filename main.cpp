@@ -5,7 +5,7 @@
 using namespace std;
 
 int main() {
-    ArrayList<float> list;
+    LinkedList<float> list;
     list.append(123.5f);
     list.append(645.026f);
     list.append(9.78f);

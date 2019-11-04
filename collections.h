@@ -6,7 +6,6 @@
 // TODO: More datastructures
 // TODO: Default values for Iterable
 // TODO: References
-// TODO: Makefile
 
 // size_t
 #include <cstddef>
