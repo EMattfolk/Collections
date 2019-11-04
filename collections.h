@@ -5,12 +5,11 @@
 // TODO: Tests
 // TODO: More datastructures
 // TODO: Default values for Iterable
-// TODO: Destructors for lists
 // TODO: References
 // TODO: Makefile
 
 // size_t
-#include <cstring>
+#include <cstddef>
 
 // Interface for implementing Iterators on collections.
 template <typename T>
@@ -108,7 +107,7 @@ public:
      * Undefined behaviour if the Iterator is not in a valid position.
      */
     using Iterable<T>::prev;
-    void prev() { data = next(data); }
+    void prev() { data = prev(data); }
 
     /*
      * Determine if the iterator has a value.
@@ -156,7 +155,7 @@ public:
 };
 
 template <typename T>
-class Iterator : AbstractIterator<T> {
+class Iterator : public AbstractIterator<T> {
 public:
     // Default constructor
     using AbstractIterator<T>::AbstractIterator;
@@ -322,9 +321,13 @@ class ArrayList : Iterable<T> {
 public:
     ArrayList();
 
+    ~ArrayList();
+
     void append(T value);
 
     void reserve(size_t new_capacity);
+
+    void clear();
 
     size_t len();
 
@@ -357,6 +360,10 @@ struct Node {
     T value;
     Node<T>* next;
     Node<T>* prev;
+
+    ~Node() {
+        if (next) delete next;
+    }
 };
 
 template <typename T>
@@ -364,9 +371,13 @@ class LinkedList : Iterable<T> {
 public:
     LinkedList();
 
+    ~LinkedList();
+
     void append(T value);
 
     void remove(Iterator<T> iterator);
+
+    void clear();
 
     size_t len();
 
@@ -410,6 +421,11 @@ ArrayList<T>::ArrayList() :
 }
 
 template <typename T>
+ArrayList<T>::~ArrayList() {
+    if (data) delete[] data;
+}
+
+template <typename T>
 void ArrayList<T>::append(T value) {
     if (size == max_size) reserve(max_size * 2);
     data[size++] = value;
@@ -427,6 +443,11 @@ void ArrayList<T>::reserve(size_t new_capacity) {
 
     delete[] data;
     data = new_buffer;
+}
+
+template <typename T>
+void ArrayList<T>::clear() {
+    size = 0;
 }
 
 template <typename T>
@@ -476,6 +497,11 @@ LinkedList<T>::LinkedList() :
     size(0) {}
 
 template <typename T>
+LinkedList<T>::~LinkedList() {
+    clear();
+}
+
+template <typename T>
 void LinkedList<T>::append(T value) {
     Node<T>* new_node = new Node<T>();
     *new_node = { value, nullptr, nullptr };
@@ -506,6 +532,14 @@ void LinkedList<T>::remove(Iterator<T> iterator) {
     }
     delete node;
     size--;
+}
+
+template <typename T>
+void LinkedList<T>::clear() {
+    if (head) delete head;
+    size = 0;
+    head = nullptr;
+    tail = nullptr;
 }
 
 template <typename T>
