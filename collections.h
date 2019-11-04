@@ -1,6 +1,13 @@
-
 #ifndef __COLLECTIONS_H_INCLUDED__
 #define __COLLECTIONS_H_INCLUDED__
+
+// TODO: Forward / Backward iterator?
+// TODO: Tests
+// TODO: More datastructures
+// TODO: Default values for Iterable
+// TODO: Destructors for lists
+// TODO: References
+// TODO: Makefile
 
 // size_t
 #include <cstring>
@@ -27,6 +34,11 @@ class Iterator;
 // Implements AbstractIterator
 template <typename F, typename T>
 class MapIterator;
+
+// Iterator adapter for filtering out elements in iterators.
+// Implements AbstractIterator
+template <typename T>
+class FilterIterator;
 
 // ArrayList
 // Implements Iterable
@@ -86,28 +98,31 @@ public:
 
     /*
      * Move this iterator to the next value.
-     * Default behaviour is to delegate task to layer below iterator.
+     * Undefined behaviour if the Iterator is not in a valid position.
      */
-    virtual void next() { data = iterable->next(data); }
+    using Iterable<T>::next;
+    void next() { data = next(data); }
 
     /*
      * Move this iterator to the previous value.
-     * Default behaviour is to delegate task to layer below iterator.
+     * Undefined behaviour if the Iterator is not in a valid position.
      */
-    virtual void prev() { data = iterable->next(data); }
+    using Iterable<T>::prev;
+    void prev() { data = next(data); }
 
     /*
      * Determine if the iterator has a value.
-     * Default behaviour is to delegate task to layer below iterator.
      */
-    virtual bool valid() { return iterable->valid(data); }
+    using Iterable<T>::valid;
+    bool valid() { return valid(data); }
 
     /*
      * Get the value contained in the iterator.
-     * Default behaviour is to delegate task to layer below iterator.
+     * Undefined behaviour if the Iterator is not in a valid position.
      * TODO: consider * and -> operators
      */
-    virtual T value() { return iterable->value(data); }
+    using Iterable<T>::value;
+    T value() { return value(data); }
 
     /*
      * Return a iterator that maps map_function to every value in the iterator.
@@ -115,6 +130,13 @@ public:
     template <typename N>
     MapIterator<T, N> map(N (*map_function)(T)) {
         return MapIterator<T, N>(iterable, data, map_function);
+    }
+
+    /*
+     * Return a iterator that ignores elements where filter_function is false.
+     */
+    FilterIterator<T> filter(bool (*filter_function)(T)) {
+        return FilterIterator<T>(iterable, data, filter_function);
     }
 
     /*
@@ -144,11 +166,12 @@ public:
     using AbstractIterator<T>::data;
 
     // Default operators
-    using AbstractIterator<T>::map;
     using AbstractIterator<T>::next;
     using AbstractIterator<T>::prev;
     using AbstractIterator<T>::valid;
     using AbstractIterator<T>::value;
+    using AbstractIterator<T>::map;
+    using AbstractIterator<T>::filter;
 
     Iterator<T> iter() {
         return iterable->iter();
@@ -173,38 +196,24 @@ public:
     T value(T* data) {
         return iterable->value(data);
     }
-
 };
 
 template <typename F, typename T>
 class MapIterator : public AbstractIterator<T> {
 public:
     MapIterator(Iterable<F>* iterable, F* data, T (*map_function)(F)) :
-        AbstractIterator<T>(nullptr, nullptr),
+        AbstractIterator<T>(this, (T*)data),
         iterable(iterable),
         data(data),
         map_function(map_function) {}
 
-    void next() override {
-        data = iterable->next(data);
-    }
-
-    void prev() override {
-        data = iterable->prev(data);
-    }
-
-    bool valid() override {
-        return iterable->valid(data);
-    }
-
-    T value() override {
-        return map_function(iterable->value(data));
-    }
-
-    template <typename N>
-    MapIterator<T, N> map(N (*map_function)(T)) {
-        return MapIterator<T, N>(this, (T*)data, map_function);
-    }
+    // Default operators
+    using AbstractIterator<T>::next;
+    using AbstractIterator<T>::prev;
+    using AbstractIterator<T>::valid;
+    using AbstractIterator<T>::value;
+    using AbstractIterator<T>::map;
+    using AbstractIterator<T>::filter;
 
     Iterator<T> iter() {
         return Iterator<T>(this, (T*)data);
@@ -244,6 +253,68 @@ public:
      * Function used to map elements of old Iterator
      */
     T (*map_function)(F);
+};
+
+template <typename T>
+class FilterIterator : public AbstractIterator<T> {
+public:
+    FilterIterator(Iterable<T>* iterable, T* data, bool (*filter_function)(T)) :
+        AbstractIterator<T>(iterable, data),
+        filter_function(filter_function) {
+            // Make sure iterator is in a valid spot
+            if (iterable->valid(data) && !filter_function(value(data))) {
+                next();
+            }
+    }
+
+    // Default data fields
+    using AbstractIterator<T>::iterable;
+    using AbstractIterator<T>::data;
+
+    // Default operators
+    using AbstractIterator<T>::next;
+    using AbstractIterator<T>::prev;
+    using AbstractIterator<T>::valid;
+    using AbstractIterator<T>::value;
+    using AbstractIterator<T>::map;
+    using AbstractIterator<T>::filter;
+
+    Iterator<T> iter() {
+        return Iterator<T>(this, data);
+    }
+
+    Iterator<T> iter_end() {
+        return iter();
+    }
+
+    T* next(T* data) {
+        do {
+            data = iterable->next(data);
+        } while (iterable->valid(data) && !filter_function(value(data)));
+
+        return data;
+    }
+
+    T* prev(T* data) {
+        do {
+            data = iterable->prev(data);
+        } while (iterable->valid(data) && !filter_function(value(data)));
+
+        return data;
+    }
+
+    bool valid(T* data) {
+        return iterable->valid(data);
+    }
+
+    T value(T* data) {
+        return iterable->value(data);
+    }
+
+    /*
+     * Function used to filter elements of old Iterator
+     */
+    bool (*filter_function)(T);
 };
 
 template <typename T>
