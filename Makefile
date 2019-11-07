@@ -1,9 +1,10 @@
 CC=g++
-CFLAGS= --std=c++17 -g
+CFLAGS= --std=c++17 -g -Wall
 
-.SILENT:
+.SILENT: default run
+.PHONY: default run
 
-make:
+default:
 	$(CC) $(CFLAGS) main.cpp -o Main
 
 run:
