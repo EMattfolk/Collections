@@ -1,14 +1,18 @@
 #ifndef __COLLECTIONS_H_INCLUDED__
 #define __COLLECTIONS_H_INCLUDED__
 
-// TODO: Forward / Backward iterator?
 // TODO: Tests
 // TODO: More datastructures
 // TODO: Default values for Iterable
 // TODO: References
+// TODO: Better collection interface
+// TODO: Fix inheritance bug
 
 #include <cstddef>    // size_t
 #include <functional> // Hashing
+
+// Amount of space allocated if not otherwise specified
+const size_t COLLECTIONS_DEFAULT_CAPACITY = 32;
 
 // Interface for implementing Iterators on collections.
 template <typename T>
@@ -150,11 +154,18 @@ public:
     Iterable<T>* iterable;
 
     /*
-     * The current position of the Iterable.
+     * The current front position of the Iterable.
      * A pointer is used because some collections do not store
      * data in sequential order, such as linked lists.
      */
     T* data;
+
+    /*
+     * The current back position of the Iterable.
+     * A pointer is used because some collections do not store
+     * data in sequential order, such as linked lists.
+     */
+    T* data_back;
 };
 
 template <typename T>
@@ -321,22 +332,38 @@ public:
 
 template <typename T>
 class ArrayList : Iterable<T> {
+// TODO: constructors
+// TODO: const on things
 public:
     ArrayList();
+    ArrayList(const ArrayList<T>& other);
+    ArrayList<T>& operator=(const ArrayList<T>& other);
 
-    ~ArrayList();
+    virtual ~ArrayList();
 
     void append(T value);
+
+    void insert(size_t index, T value);
+
+    T pop();
+
+    void remove(size_t index);
 
     void reserve(size_t new_capacity);
 
     void clear();
 
-    size_t len();
+    size_t len() const;
 
-    size_t capacity();
+    size_t capacity() const;
 
-    T operator[](size_t index);
+    bool is_empty() const;
+
+    T& operator[](size_t index) const;
+
+    bool operator==(const ArrayList<T>& other) const;
+
+    bool operator!=(const ArrayList<T>& other) const;
 
     Iterator<T> iter();
 
@@ -353,6 +380,9 @@ public:
     }
 
 private:
+
+    void reserve_default();
+
     T* data;
     size_t size;
     size_t max_size;
@@ -537,10 +567,28 @@ AbstractIterator<T>::AbstractIterator(Iterable<T>* iterable, T* data) :
 
 template <typename T>
 ArrayList<T>::ArrayList() :
+    data(nullptr),
     size(0),
-    max_size(0),
-    data(nullptr) {
-        reserve(1);
+    max_size(0) {}
+
+template <typename T>
+ArrayList<T>::ArrayList(const ArrayList<T>& other) : ArrayList<T>() {
+    reserve(other.max_size);
+    size = other.size;
+    for (size_t i = 0; i < size; i++) {
+        data[i] = other[i];
+    }
+}
+
+template <typename T>
+ArrayList<T>& ArrayList<T>::operator=(const ArrayList<T>& other) {
+    reserve(other.max_size);
+    size = other.size;
+    for (size_t i = 0; i < size; i++) {
+        data[i] = other[i];
+    }
+
+    return *this;
 }
 
 template <typename T>
@@ -550,8 +598,34 @@ ArrayList<T>::~ArrayList() {
 
 template <typename T>
 void ArrayList<T>::append(T value) {
-    if (size == max_size) reserve(max_size * 2);
+    if (size == max_size) reserve_default();
     data[size++] = value;
+}
+
+template <typename T>
+void ArrayList<T>::insert(size_t index, T value) {
+    if (size == max_size) reserve_default();
+    for (size_t i = size; i > index; i--) {
+        data[i] = data[i - 1];
+    }
+    data[index] = value;
+    size++;
+}
+
+template <typename T>
+T ArrayList<T>::pop() {
+    T temp = data[size - 1];
+    remove(size - 1);
+    return temp;
+}
+
+template <typename T>
+void ArrayList<T>::remove(size_t index) {
+    data[index].~T();
+    for (size_t i = index; i < size - 1; i++) {
+        data[i] = data[i + 1];
+    }
+    size--;
 }
 
 template <typename T>
@@ -574,18 +648,37 @@ void ArrayList<T>::clear() {
 }
 
 template <typename T>
-size_t ArrayList<T>::len() {
+size_t ArrayList<T>::len() const {
     return size;
 }
 
 template <typename T>
-size_t ArrayList<T>::capacity() {
+size_t ArrayList<T>::capacity() const {
     return max_size;
 }
 
 template <typename T>
-T ArrayList<T>::operator[](size_t index) {
+bool ArrayList<T>::is_empty() const {
+    return size == 0;
+}
+
+template <typename T>
+T& ArrayList<T>::operator[](size_t index) const {
     return data[index];
+}
+
+template <typename T>
+bool ArrayList<T>::operator==(const ArrayList<T>& other) const {
+    if (size != other.size) return false;
+    for (size_t i = 0; i < size; i++) {
+        if (data[i] != other[i]) return false;
+    }
+    return true;
+}
+
+template <typename T>
+bool ArrayList<T>::operator!=(const ArrayList<T>& other) const {
+    return !(*this == other);
 }
 
 template <typename T>
@@ -595,7 +688,7 @@ Iterator<T> ArrayList<T>::iter() {
 
 template <typename T>
 Iterator<T> ArrayList<T>::iter_end() {
-    return Iterator<T>(this, data + size);
+    return Iterator<T>(this, data + size - 1);
 }
 
 template <typename T>
@@ -611,6 +704,14 @@ T* ArrayList<T>::prev(T* data) {
 template <typename T>
 bool ArrayList<T>::valid(T* data) {
     return this->data <= data && data < this->data + size;
+}
+
+template <typename T>
+void ArrayList<T>::reserve_default() {
+    if (max_size == 0)
+        reserve(COLLECTIONS_DEFAULT_CAPACITY);
+    else
+        reserve(max_size * 2);
 }
 
 template <typename T>

@@ -5,7 +5,7 @@ CFLAGS= --std=c++17 -g -Wall
 .PHONY: default run
 
 default:
-	$(CC) $(CFLAGS) main.cpp -o Main
+	$(CC) $(CFLAGS) tests.cpp -o Tests
 
 run:
-	$(CC) $(CFLAGS) main.cpp -o Main && ./Main
+	$(CC) $(CFLAGS) tests.cpp -o Tests && ./Tests
