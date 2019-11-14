@@ -235,8 +235,8 @@ void test_arraylist() {
 int main() {
 
     //int (*to_int)(float) = [](float a) { return (int) a; };
-    //float (*sq)(float) = [](float a) { return a * a; };
-    //bool (*less100)(float) = [](float a) { return a < 100; };
+    //int (*sq)(int) = [](int a) { return a * a; };
+    bool (*even)(int) = [](int a) { return a % 2 == 0; };
 
     ArrayList<int> list;
     list.append(4);
@@ -249,9 +249,16 @@ int main() {
     list.append(8923);
     list.append(234);
     list.sort();
+    
+    for (auto it = list.iter().filter(even)/*.map(sq)*/; it.valid(); it.next()) {
+        cout << *it << endl;
+        *it = 0;
+    }
+
+    cout << endl;
 
     for (auto it = list.iter(); it.valid(); it.next()) {
-        cout << it.value() << endl;
+        cout << *it << endl;
     }
 
     test_arraylist();

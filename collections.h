@@ -3,10 +3,9 @@
 
 // TODO: Tests
 // TODO: More datastructures
-// TODO: Default values for Iterable
-// TODO: References
 // TODO: Better collection interface
-// TODO: Fix inheritance bug
+// TODO: public / private on things
+// TODO: operator<< for iterator
 
 #include <cstddef>    // size_t
 #include <functional> // Hashing
@@ -77,22 +76,22 @@ public:
     /*
      * Get next data from current data.
      */
-    virtual T* next(T* data) = 0;
+    virtual T* next_data(T* data) = 0;
 
     /*
      * Get previous data from current data.
      */
-    virtual T* prev(T* data) = 0;
+    virtual T* prev_data(T* data) = 0;
 
     /*
      * Determine if the data pointed to is valid.
      */
-    virtual bool valid(T* data) = 0;
+    virtual bool is_valid_data(T* data) = 0;
 
     /*
      * Get value associated with data
      */
-    virtual T value(T* it) = 0;
+    virtual T& value(T* data) = 0;
 };
 
 template <typename T>
@@ -107,29 +106,30 @@ public:
      * Move this iterator to the next value.
      * Undefined behaviour if the Iterator is not in a valid position.
      */
-    using Iterable<T>::next;
-    void next() { data = next(data); }
+    void next() { data = this->next_data(data); }
 
     /*
      * Move this iterator to the previous value.
      * Undefined behaviour if the Iterator is not in a valid position.
      */
-    using Iterable<T>::prev;
-    void prev() { data = prev(data); }
+    void prev() { data = this->prev_data(data); }
 
     /*
      * Determine if the iterator has a value.
      */
-    using Iterable<T>::valid;
-    bool valid() { return valid(data); }
+    bool valid() { return this->is_valid_data(data); }
 
     /*
      * Get the value contained in the iterator.
      * Undefined behaviour if the Iterator is not in a valid position.
-     * TODO: consider * and -> operators
      */
-    using Iterable<T>::value;
-    T value() { return value(data); }
+    T& operator*() { return this->value(data); }
+
+    /*
+     * Access members of the value contained in the iterator.
+     * Undefined behaviour if the Iterator is not in a valid position.
+     */
+    T* operator->() { return &this->value(data); }
 
     /*
      * Return a iterator that maps map_function to every value in the iterator.
@@ -172,35 +172,27 @@ public:
     using AbstractIterator<T>::iterable;
     using AbstractIterator<T>::data;
 
-    // Default operators
-    using AbstractIterator<T>::next;
-    using AbstractIterator<T>::prev;
-    using AbstractIterator<T>::valid;
-    using AbstractIterator<T>::value;
-    using AbstractIterator<T>::map;
-    using AbstractIterator<T>::filter;
-
-    Iterator<T> iter() {
+    Iterator<T> iter() override {
         return iterable->iter();
     }
 
-    Iterator<T> iter_end() {
+    Iterator<T> iter_end() override {
         return iterable->iter_end();
     }
 
-    T* next(T* data) {
-        return iterable->next(data);
+    T* next_data(T* data) override {
+        return iterable->next_data(data);
     }
 
-    T* prev(T* data) {
-        return iterable->prev(data);
+    T* prev_data(T* data) override {
+        return iterable->prev_data(data);
     }
 
-    bool valid(T* data) {
-        return iterable->valid(data);
+    bool is_valid_data(T* data) override {
+        return iterable->is_valid_data(data);
     }
 
-    T value(T* data) {
+    T& value(T* data) override {
         return iterable->value(data);
     }
 };
@@ -214,14 +206,6 @@ public:
         data(data),
         map_function(map_function) {}
 
-    // Default operators
-    using AbstractIterator<T>::next;
-    using AbstractIterator<T>::prev;
-    using AbstractIterator<T>::valid;
-    using AbstractIterator<T>::value;
-    using AbstractIterator<T>::map;
-    using AbstractIterator<T>::filter;
-
     Iterator<T> iter() {
         return Iterator<T>(this, (T*)data);
     }
@@ -230,20 +214,21 @@ public:
         return iter();
     }
 
-    T* next(T* data) {
-        return (T*)iterable->next((F*) data);
+    T* next_data(T* data) {
+        return (T*)iterable->next_data((F*) data);
     }
 
-    T* prev(T* data) {
-        return (T*)iterable->prev((F*) data);
+    T* prev_data(T* data) {
+        return (T*)iterable->prev_data((F*) data);
     }
 
-    bool valid(T* data) {
-        return iterable->valid((F*) data);
+    bool is_valid_data(T* data) {
+        return iterable->is_valid_data((F*) data);
     }
 
-    T value(T* data) {
-        return map_function(iterable->value((F*)data));
+    T& value(T* data) {
+        temp = map_function(iterable->value((F*)data));
+        return temp;
     }
 
     /*
@@ -260,6 +245,11 @@ public:
      * Function used to map elements of old Iterator
      */
     T (*map_function)(F);
+
+    /*
+     * Temporary storage used to get values from the iterator
+     */
+    T temp;
 };
 
 template <typename T>
@@ -269,22 +259,14 @@ public:
         AbstractIterator<T>(iterable, data),
         filter_function(filter_function) {
             // Make sure iterator is in a valid spot
-            if (iterable->valid(data) && !filter_function(value(data))) {
-                next();
+            if (iterable->is_valid_data(data) && !filter_function(value(data))) {
+                this->next();
             }
     }
 
     // Default data fields
     using AbstractIterator<T>::iterable;
     using AbstractIterator<T>::data;
-
-    // Default operators
-    using AbstractIterator<T>::next;
-    using AbstractIterator<T>::prev;
-    using AbstractIterator<T>::valid;
-    using AbstractIterator<T>::value;
-    using AbstractIterator<T>::map;
-    using AbstractIterator<T>::filter;
 
     Iterator<T> iter() {
         return Iterator<T>(this, data);
@@ -295,27 +277,27 @@ public:
         return iter();
     }
 
-    T* next(T* data) {
+    T* next_data(T* data) {
         do {
-            data = iterable->next(data);
-        } while (iterable->valid(data) && !filter_function(value(data)));
+            data = iterable->next_data(data);
+        } while (iterable->is_valid_data(data) && !filter_function(value(data)));
 
         return data;
     }
 
-    T* prev(T* data) {
+    T* prev_data(T* data) {
         do {
-            data = iterable->prev(data);
-        } while (iterable->valid(data) && !filter_function(value(data)));
+            data = iterable->prev_data(data);
+        } while (iterable->is_valid_data(data) && !filter_function(value(data)));
 
         return data;
     }
 
-    bool valid(T* data) {
-        return iterable->valid(data);
+    bool is_valid_data(T* data) {
+        return iterable->is_valid_data(data);
     }
 
-    T value(T* data) {
+    T& value(T* data) {
         return iterable->value(data);
     }
 
@@ -365,15 +347,13 @@ public:
 
     Iterator<T> iter_end();
 
-    T* next(T* data);
+    T* next_data(T* data);
 
-    T* prev(T* data);
+    T* prev_data(T* data);
 
-    bool valid(T* data);
+    bool is_valid_data(T* data);
 
-    T value(T* data) {
-        return *data;
-    }
+    T& value(T* data);
 
 private:
 
@@ -418,13 +398,13 @@ public:
 
     Iterator<T> iter_end();
 
-    T* next(T* data);
+    T* next_data(T* data);
 
-    T* prev(T* data);
+    T* prev_data(T* data);
 
-    bool valid(T* data);
+    bool is_valid_data(T* data);
 
-    T value(T* data) {
+    T& value(T* data) {
         return *data;
     }
 
@@ -695,18 +675,23 @@ Iterator<T> ArrayList<T>::iter_end() {
 }
 
 template <typename T>
-T* ArrayList<T>::next(T* data) {
+T* ArrayList<T>::next_data(T* data) {
     return data + 1;
 }
 
 template <typename T>
-T* ArrayList<T>::prev(T* data) {
+T* ArrayList<T>::prev_data(T* data) {
     return data - 1;
 }
 
 template <typename T>
-bool ArrayList<T>::valid(T* data) {
+bool ArrayList<T>::is_valid_data(T* data) {
     return this->data <= data && data < this->data + size;
+}
+
+template <typename T>
+T& ArrayList<T>::value(T* data) {
+    return *data;
 }
 
 template <typename T>
@@ -811,17 +796,17 @@ Iterator<T> LinkedList<T>::iter_end() {
 }
 
 template <typename T>
-T* LinkedList<T>::next(T* data) {
+T* LinkedList<T>::next_data(T* data) {
     return (T*)((Node<T>*)data)->next;
 }
 
 template <typename T>
-T* LinkedList<T>::prev(T* data) {
+T* LinkedList<T>::prev_data(T* data) {
     return (T*)((Node<T>*)data)->prev;
 }
 
 template <typename T>
-bool LinkedList<T>::valid(T* data) {
+bool LinkedList<T>::is_valid_data(T* data) {
     return data != nullptr;
 }
 
