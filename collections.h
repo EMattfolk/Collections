@@ -10,6 +10,7 @@
 
 #include <cstddef>    // size_t
 #include <functional> // Hashing
+#include <utility>    // std::swap
 
 // Amount of space allocated if not otherwise specified
 const size_t COLLECTIONS_DEFAULT_CAPACITY = 32;
@@ -159,13 +160,6 @@ public:
      * data in sequential order, such as linked lists.
      */
     T* data;
-
-    /*
-     * The current back position of the Iterable.
-     * A pointer is used because some collections do not store
-     * data in sequential order, such as linked lists.
-     */
-    T* data_back;
 };
 
 template <typename T>
@@ -296,6 +290,7 @@ public:
         return Iterator<T>(this, data);
     }
 
+    // TODO: Implement
     Iterator<T> iter_end() {
         return iter();
     }
@@ -333,7 +328,6 @@ public:
 template <typename T>
 class ArrayList : Iterable<T> {
 // TODO: constructors
-// TODO: const on things
 public:
     ArrayList();
     ArrayList(const ArrayList<T>& other);
@@ -352,6 +346,8 @@ public:
     void reserve(size_t new_capacity);
 
     void clear();
+
+    void sort();
 
     size_t len() const;
 
@@ -382,6 +378,8 @@ public:
 private:
 
     void reserve_default();
+
+    void quick_sort(size_t start, size_t end);
 
     T* data;
     size_t size;
@@ -648,6 +646,11 @@ void ArrayList<T>::clear() {
 }
 
 template <typename T>
+void ArrayList<T>::sort() {
+    quick_sort(0, size);
+}
+
+template <typename T>
 size_t ArrayList<T>::len() const {
     return size;
 }
@@ -713,6 +716,27 @@ void ArrayList<T>::reserve_default() {
     else
         reserve(max_size * 2);
 }
+
+template <typename T>
+void ArrayList<T>::quick_sort(size_t start, size_t end) {
+    if (end - start < 2) return;
+
+    std::swap(data[(start + end) / 2], data[end - 1]);
+    T& pivot = data[end - 1];
+    size_t low = start;
+    for (size_t i = start; i < end - 1; i++) {
+        if (data[i] < pivot) {
+            std::swap(data[i], data[low]);
+            low++;
+        }
+    }
+
+    std::swap(data[low], data[end - 1]);
+
+    quick_sort(start, low);
+    quick_sort(low + 1, end);
+}
+
 
 template <typename T>
 LinkedList<T>::LinkedList() :
