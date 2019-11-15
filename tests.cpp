@@ -236,28 +236,32 @@ int main() {
 
     //int (*to_int)(float) = [](float a) { return (int) a; };
     //int (*sq)(int) = [](int a) { return a * a; };
-    bool (*even)(int) = [](int a) { return a % 2 == 0; };
+    //bool (*even)(int) = [](int a) { return a % 2 == 0; };
 
-    ArrayList<int> list;
-    list.append(4);
-    list.append(134);
-    list.append(334);
-    list.append(1);
-    list.append(734);
-    list.append(2);
-    list.append(3);
-    list.append(8923);
-    list.append(234);
-    list.sort();
-    
-    for (auto it = list.iter().filter(even)/*.map(sq)*/; it.valid(); it.next()) {
-        cout << *it << endl;
-        *it = 0;
-    }
+    //ArrayList<int> list;
+    //list.append(4);
+    //list.append(134);
+    //list.append(334);
+    //list.append(1);
+    //list.append(734);
+    //list.append(2);
+    //list.append(3);
+    //list.append(8923);
+    //list.append(234);
+    //list.sort();
 
-    cout << endl;
+    //for (auto it = list.iter().filter(even)/*.map(sq)*/; it.valid(); it.next()) {
+    //    cout << *it << endl;
+    //    *it = 0;
+    //}
 
-    for (auto it = list.iter(); it.valid(); it.next()) {
+    //cout << endl;
+
+    //for (auto it = list.iter(); it.valid(); it.next()) {
+    //    cout << *it << endl;
+    //}
+
+    for (auto it = Range(10); it.valid(); it.next()) {
         cout << *it << endl;
     }
 

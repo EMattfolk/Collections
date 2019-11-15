@@ -42,6 +42,11 @@ class MapIterator;
 template <typename T>
 class FilterIterator;
 
+// Iterator used to iterate over a range
+// Implements AbstractIterator
+class RangeIterator;
+using Range = RangeIterator;
+
 // ArrayList
 // Implements Iterable
 template <typename T>
@@ -305,6 +310,63 @@ public:
      * Function used to filter elements of old Iterator
      */
     bool (*filter_function)(T);
+};
+
+class RangeIterator : public AbstractIterator<int64_t> {
+public:
+    RangeIterator(int64_t start, int64_t end, int64_t step) :
+        AbstractIterator<int64_t>(this, new int64_t),
+        start(start),
+        end(end),
+        step(step) {
+            *data = start;
+    }
+
+    RangeIterator(int64_t end) :
+        RangeIterator(0, end, 1) {}
+
+    RangeIterator(int64_t start, int64_t end) :
+        RangeIterator(start, end, 1) {}
+
+    ~RangeIterator() {
+        delete data;
+    }
+
+    using AbstractIterator<int64_t>::data;
+
+    virtual Iterator<int64_t> iter() {
+        return Iterator<int64_t>(this, data);
+    }
+
+    // TODO: Do this
+    virtual Iterator<int64_t> iter_end() {
+        return Iterator<int64_t>(this, data);
+    }
+
+    virtual int64_t* next_data(int64_t* data) {
+        *data += step;
+        return data;
+    }
+
+    virtual int64_t* prev_data(int64_t* data) {
+        *data -= step;
+        return data;
+    }
+
+    virtual bool is_valid_data(int64_t* data) {
+        if (step < 0)
+            return start >= *data && *data > end;
+        else
+            return start <= *data && *data < end;
+    }
+
+    virtual int64_t& value(int64_t* data) {
+        return *data;
+    };
+
+    int64_t start;
+    int64_t end;
+    int64_t step;
 };
 
 template <typename T>
