@@ -141,14 +141,14 @@ public:
      */
     template <typename N>
     MapIterator<T, N> map(N (*map_function)(T)) {
-        return MapIterator<T, N>(iterable, data, map_function);
+        return MapIterator<T, N>(this, data, map_function);
     }
 
     /*
      * Return a iterator that ignores elements where filter_function is false.
      */
     FilterIterator<T> filter(bool (*filter_function)(T)) {
-        return FilterIterator<T>(iterable, data, filter_function);
+        return FilterIterator<T>(this, data, filter_function);
     }
 
     /*
@@ -315,7 +315,8 @@ public:
 class RangeIterator : public AbstractIterator<int64_t> {
 public:
     RangeIterator(int64_t start, int64_t end, int64_t step) :
-        AbstractIterator<int64_t>(this, new int64_t),
+        AbstractIterator<int64_t>(this, &current),
+        current(start),
         start(start),
         end(end),
         step(step) {
@@ -328,42 +329,39 @@ public:
     RangeIterator(int64_t start, int64_t end) :
         RangeIterator(start, end, 1) {}
 
-    ~RangeIterator() {
-        delete data;
-    }
-
     using AbstractIterator<int64_t>::data;
 
-    virtual Iterator<int64_t> iter() {
+    Iterator<int64_t> iter() {
         return Iterator<int64_t>(this, data);
     }
 
     // TODO: Do this
-    virtual Iterator<int64_t> iter_end() {
+    Iterator<int64_t> iter_end() {
         return Iterator<int64_t>(this, data);
     }
 
-    virtual int64_t* next_data(int64_t* data) {
+    int64_t* next_data(int64_t* data) {
         *data += step;
         return data;
     }
 
-    virtual int64_t* prev_data(int64_t* data) {
+    int64_t* prev_data(int64_t* data) {
         *data -= step;
         return data;
     }
 
-    virtual bool is_valid_data(int64_t* data) {
+    bool is_valid_data(int64_t* data) {
         if (step < 0)
             return start >= *data && *data > end;
         else
             return start <= *data && *data < end;
     }
 
-    virtual int64_t& value(int64_t* data) {
+    int64_t& value(int64_t* data) {
         return *data;
     };
 
+    int64_t current;
     int64_t start;
     int64_t end;
     int64_t step;
