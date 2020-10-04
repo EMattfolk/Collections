@@ -235,17 +235,17 @@ void test_arraylist() {
 int main() {
 
     //int (*to_int)(float) = [](float a) { return (int) a; };
-    long int (*sq)(long int) = [](long int a) { return a * a; };
-    bool (*even)(long int) = [](long int a) { return a % 2 == 0; };
+    //long int (*sq)(long int) = [](long int a) { return a * a; };
+    //bool (*even)(long int) = [](long int a) { return a % 2 == 0; };
     //bool (*odd)(long int) = [](long int a) { return a % 2 == 1; };
 
     //for (auto it = list.iter(); it.valid(); it.next()) {
     //    cout << *it << endl;
     //}
 
-    for (auto it = Range(10).map(sq).filter(even); it.valid(); it.next()) {
-        cout << *it << endl;
-    }
+    //for (auto it = Range(10).map(sq).filter(even); it.valid(); it.next()) {
+    //    cout << *it << endl;
+    //}
 
     test_arraylist();
 }

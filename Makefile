@@ -1,11 +1,19 @@
 CC=g++
 CFLAGS= --std=c++17 -g -Wall
+BUILDDIR=bin
+SRC=$(wildcard src/*)
 
-.SILENT: default run
-.PHONY: default run
+.PHONY: clean run
 
-default:
-	$(CC) $(CFLAGS) tests.cpp -o Tests
+run: $(BUILDDIR)/tests
+	./$<
 
-run:
-	$(CC) $(CFLAGS) tests.cpp -o Tests && ./Tests
+$(BUILDDIR)/tests: src/tests.cpp $(SRC) $(BUILDDIR)
+	$(CC) $(CFLAGS) $< -o $@
+
+$(BUILDDIR):
+	mkdir $@
+
+clean:
+	rm -rf bin
+
