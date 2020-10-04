@@ -7,11 +7,11 @@ important.
 
 ### Progress
 
-[ ] Iterators
-[ ] Iterators documentation
-[x] ArrayList
-[ ] ArrayList documentation
-[x] LinkedList
-[ ] LinkedList documentation
-[ ] HashMap
-[ ] HashMap documentation
+- [ ] Iterators
+- [ ] Iterators documentation
+- [x] ArrayList
+- [ ] ArrayList documentation
+- [x] LinkedList
+- [ ] LinkedList documentation
+- [ ] HashMap
+- [ ] HashMap documentation
